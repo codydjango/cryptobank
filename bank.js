@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const sodium = require('sodium-native')
 
-const RESET = false
+const RESET = true
 
 class Log {
     static getLogPath() {
@@ -34,6 +34,14 @@ class Log {
         return outputBuf.toString('hex')
     }
 
+    static get genesisHash() {
+        return Buffer.alloc(32).toString('hex')
+    }
+
+    static getBestHash(log) {
+        return log.length ? log[log.length - 1].hash : Log.genesisHash
+    }
+
     constructor() {
         this._log = Log.loadLog(RESET)
     }
@@ -46,7 +54,7 @@ class Log {
     add(msg) {
         this._log.push({
             value: msg,
-            hash: Log.hashToHex(JSON.stringify(msg))
+            hash: Log.hashToHex(Log.getBestHash(this._log) + JSON.stringify(msg))
         })
     }
 
