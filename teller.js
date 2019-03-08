@@ -11,7 +11,8 @@ client.on('data', function (msg) {
 })
 
 client.write({cmd: 'balance'})
-client.write({cmd: 'deposit', amount: 123 })
+client.write({cmd: 'deposit', amount: 200 })
+client.write({cmd: 'withdraw', amount: 123 })
 client.write({cmd: 'withdraw', amount: 50 })
 client.write({cmd: 'withdraw', amount: 50 })
 client.write({cmd: 'deposit', amount: 30 })

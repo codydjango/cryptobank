@@ -1,64 +1,111 @@
 // bank.js
 const jsonStream = require('duplex-json-stream')
 const net = require('net')
-const log = []
 const fs = require('fs')
+const path = require('path')
 
-let balance = 200
-
-function reduceLogs() {
-    console.log('reduceLogs')
-    return log.reduce((acc, current) => {
-        if (Number.isInteger(acc)) {
-            acc = acc.amount
-        }
-
-        switch (current.cmd) {
-            case 'deposit':
-                acc + current.amount
-                break
-            case 'withdraw':
-                acc - current.amount
-                break
-        }
-
-        return acc
-    }, 0)
-}
-
-function getBalance(recalculate=false) {
-    console.log('getBalance', balance)
-    if (recalculate) {
-        balance = reduceLogs()
+class Log {
+    static getLogPath() {
+        return path.join(path.dirname(__dirname), '/log.json')
     }
 
-    return balance
+    static loadLog(reset=false) {
+        if (reset) return []
+        try {
+            return JSON.parse(fs.readFileSync(Log.getLogPath()))
+        } catch (err) {
+            return []
+        }
+    }
+
+    static saveLog() {
+        fs.writeFileSync(Log.getLogPath(), JSON.stringify(log, null, 2))
+    }
+
+    constructor() {
+        const RESET = true
+        this._log = Log.loadLog(RESET)
+    }
+
+    logMsg(msg) {
+        this._log.push(msg)
+        Log.saveLog(this._log)
+    }
+
+    dump() {
+        return this._log
+    }
 }
 
-function writeToLog(msg) {
-    log.push(msg)
+class Bank {
+    static calculateBalanceFromLog(log) {
+        return log.reduce((acc, current) => {
+            switch (current.cmd) {
+                case 'deposit':
+                    acc += current.amount
+                    break
+                case 'withdraw':
+                    acc -= current.amount
+                    break
+            }
+
+            return acc
+        }, 0)
+    }
+
+    constructor(log) {
+        this._log = log
+        this._balance = this.recalculateBalance(this._log)
+        console.log('initialBalance', this._balance);
+    }
+
+    recalculateBalance(log) {
+        return Bank.calculateBalanceFromLog(log.dump())
+    }
+
+    getBalance(recalculate=false) {
+        if (recalculate) {
+            this._balance = this.recalculateBalance(this._log)
+        }
+
+        return this._balance
+    }
+
+    logMsg(msg) {
+        console.log('log', msg)
+        this._log.logMsg(msg)
+    }
+
+    deposit(msg) {
+        this._balance += msg.amount
+        this.logMsg(msg)
+    }
+
+    withdraw(msg) {
+        this._balance -= msg.amount
+        this.logMsg(msg)
+    }
+
+    canWithdraw(amount) {
+        return (this.getBalance() >= amount)
+    }
+
+    canDeposit(amount) {
+        return (amount >= 0)
+    }
 }
 
-function handleDeposit(msg) {
-    balance += msg.amount
-    writeToLog(msg)
-}
+const log = new Log()
+const bank = new Bank(log)
 
-function handleWithdrawal(msg) {
-    balance -= msg.amount
-    writeToLog(msg)
-}
+// console.log('log', log)
+// console.log('bank', bank)
 
-function canWithdraw(amount) {
-    return (getBalance() >= amount)
-}
-
-function canDeposit(amount) {
-    return (amount >= 0)
-}
+// process.exit()
 
 const server = net.createServer(socket => {
     socket = jsonStream(socket)
+
     socket.on('data', function (msg) {
         console.log('Bank received:', msg)
         // socket.write can be used to send a reply
@@ -67,35 +114,21 @@ const server = net.createServer(socket => {
 
         switch (msg.cmd) {
             case 'deposit':
-                (canDeposit(msg.amount)) ? handleDeposit(msg) : nope()
+                (bank.canDeposit(msg.amount)) ? bank.deposit(msg) : nope()
+                break
             case 'withdraw':
-                (canWithdraw(msg.amount)) ? handleWithdrawal(msg) : nope()
+                (bank.canWithdraw(msg.amount)) ? bank.withdraw(msg) : nope()
+                break
             case 'balance':
+                break
             default:
-                socket.write({
-                    cmd: 'balance',
-                    balance: getBalance() })
+                break
         }
+
+        socket.write({
+            cmd: 'balance',
+            balance: bank.getBalance() })
     })
 })
-
-
-// const log = [
-//     {cmd: 'deposit', amount: 130},
-//     {cmd: 'deposit', amount: 0},
-//     {cmd: 'deposit', amount: 120}
-// ]
-
-// const v = log.reduce((acc, current) => {
-//     if (isNaN(acc)) {
-//         acc = acc.amount
-//     }
-//     return acc + current.amount
-// })
-
-// You job now is to expand the teller.js and bank.js with the deposit command,
-// that is stored in a transaction log and updates the bank state (ie. it's balance).
-// When the bank gets a deposit command, it should reply with the current balance
-// like this: {cmd: 'balance', balance: someNumber}. A good idea is to make teller.js a very simple CLI tool, reading commands and arguments from process.argv.
 
 server.listen(3876)
