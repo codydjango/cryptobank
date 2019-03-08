@@ -3,6 +3,9 @@ const jsonStream = require('duplex-json-stream')
 const net = require('net')
 const fs = require('fs')
 const path = require('path')
+const sodium = require('sodium-native')
+
+const RESET = false
 
 class Log {
     static getLogPath() {
@@ -18,18 +21,37 @@ class Log {
         }
     }
 
-    static saveLog() {
-        fs.writeFileSync(Log.getLogPath(), JSON.stringify(log, null, 2))
+    static saveLog(data) {
+        fs.writeFileSync(Log.getLogPath(), JSON.stringify(data, null, 2))
+    }
+
+    static hashToHex(stringData) {
+        const inputBuf = Buffer.from(stringData)
+        const outputBuf = Buffer.alloc(sodium.crypto_generichash_BYTES)
+
+        sodium.crypto_generichash(outputBuf, inputBuf)
+
+        return outputBuf.toString('hex')
     }
 
     constructor() {
-        const RESET = true
         this._log = Log.loadLog(RESET)
     }
 
     logMsg(msg) {
-        this._log.push(msg)
-        Log.saveLog(this._log)
+        this.add(msg)
+        this.save()
+    }
+
+    add(msg) {
+        this._log.push({
+            value: msg,
+            hash: Log.hashToHex(JSON.stringify(msg))
+        })
+    }
+
+    save() {
+        Log.saveLog(this.dump())
     }
 
     dump() {
@@ -39,18 +61,18 @@ class Log {
 
 class Bank {
     static calculateBalanceFromLog(log) {
-        return log.reduce((acc, current) => {
-            switch (current.cmd) {
-                case 'deposit':
-                    acc += current.amount
-                    break
-                case 'withdraw':
-                    acc -= current.amount
-                    break
-            }
+        return log.map(entry => entry.value).reduce((acc, current) => {
+                switch (current.cmd) {
+                    case 'deposit':
+                        acc += current.amount
+                        break
+                    case 'withdraw':
+                        acc -= current.amount
+                        break
+                }
 
-            return acc
-        }, 0)
+                return acc
+            }, 0)
     }
 
     constructor(log) {
@@ -77,11 +99,13 @@ class Bank {
     }
 
     deposit(msg) {
+        console.log('deposit', msg, this._balance)
         this._balance += msg.amount
         this.logMsg(msg)
     }
 
     withdraw(msg) {
+        console.log('withdraw', msg, this._balance)
         this._balance -= msg.amount
         this.logMsg(msg)
     }
@@ -100,8 +124,6 @@ const bank = new Bank(log)
 
 // console.log('log', log)
 // console.log('bank', bank)
-
-// process.exit()
 
 const server = net.createServer(socket => {
     socket = jsonStream(socket)
