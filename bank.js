@@ -9,21 +9,21 @@ const RESET = true
 const tamperErr = new Error('tampered')
 
 class Log {
-    static getLogPath() {
+    static get logPath() {
         return path.join(path.dirname(__dirname), '/log.json')
     }
 
     static loadLog(reset=false) {
         if (reset) return []
         try {
-            return JSON.parse(fs.readFileSync(Log.getLogPath()))
+            return JSON.parse(fs.readFileSync(Log.logPath))
         } catch (err) {
             return []
         }
     }
 
     static saveLog(data) {
-        fs.writeFileSync(Log.getLogPath(), JSON.stringify(data, null, 2))
+        fs.writeFileSync(Log.logPath, JSON.stringify(data, null, 2))
     }
 
     static hashToHex(stringData) {
@@ -92,6 +92,52 @@ class Log {
     }
 }
 
+class Secure {
+    static get keypairPath() {
+        return path.join(path.dirname(__dirname), '/keypair.json')
+    }
+
+    static hasKeys() {
+        return fs.existsSync(Secure.keypairPath)
+    }
+
+    static generateKeys() {
+        const publicKeyBuf = Buffer.alloc(sodium.crypto_sign_PUBLICKEYBYTES)
+        const secretKeyBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES)
+        const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
+
+        sodium.crypto_sign_keypair(publicKeyBuf, secretKeyBuf)
+
+        const keys = {
+            private: secretKeyBuf.toString('hex'),
+            public: publicKeyBuf.toString('hex')
+        }
+
+        fs.writeFileSync(Secure.keypairPath, JSON.stringify(keys))
+
+        return keys
+    }
+
+    static loadKeys() {
+        try {
+            return JSON.parse(fs.readFileSync(Secure.keypairPath))
+        } catch (err) {
+            return []
+        }
+    }
+
+    constructor() {
+        const publicKeyBuf = Buffer.alloc(sodium.crypto_sign_PUBLICKEYBYTES)
+        const secretKeyBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES)
+        const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
+
+        const { publicKey, privateKey } = (Secure.hasKeys()) ? Secure.loadKeys() : Secure.generateKeys()
+
+        this.publicKey = publicKey
+        this.privateKey = privateKey
+    }
+}
+
 class Bank {
     static calculateBalanceFromLog(log) {
         return log.map(entry => entry.value).reduce((acc, current) => {
@@ -109,6 +155,7 @@ class Bank {
     }
 
     constructor(log) {
+        this._secure = new Secure()
         this._log = log
         this._balance = this.recalculateBalance(this._log)
     }
