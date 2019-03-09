@@ -6,6 +6,7 @@ const path = require('path')
 const sodium = require('sodium-native')
 
 const RESET = true
+const tamperErr = new Error('tampered')
 
 class Log {
     static getLogPath() {
@@ -42,8 +43,32 @@ class Log {
         return log.length ? log[log.length - 1].hash : Log.genesisHash
     }
 
+    static validateEntry(prevHash, entry) {
+        if (Log.hashToHex(prevHash + JSON.stringify(entry.value)) === entry.hash) {
+            return entry.hash
+        } else {
+            throw tamperErr
+        }
+    }
+
+    static validateLog(log) {
+        log.reduce(Log.validateEntry, Log.genesisHash)
+
+        return log
+    }
+
     constructor() {
-        this._log = Log.loadLog(RESET)
+        try {
+            this._log = Log.validateLog(Log.loadLog(RESET))
+        } catch (err) {
+            if (err === tamperErr) {
+                console.log('Tampered log, exiting.')
+                process.exit()
+            } else {
+                throw err
+            }
+        }
+
     }
 
     logMsg(msg) {
@@ -86,7 +111,6 @@ class Bank {
     constructor(log) {
         this._log = log
         this._balance = this.recalculateBalance(this._log)
-        console.log('initialBalance', this._balance);
     }
 
     recalculateBalance(log) {
@@ -102,18 +126,15 @@ class Bank {
     }
 
     logMsg(msg) {
-        console.log('log', msg)
         this._log.logMsg(msg)
     }
 
     deposit(msg) {
-        console.log('deposit', msg, this._balance)
         this._balance += msg.amount
         this.logMsg(msg)
     }
 
     withdraw(msg) {
-        console.log('withdraw', msg, this._balance)
         this._balance -= msg.amount
         this.logMsg(msg)
     }
@@ -130,24 +151,20 @@ class Bank {
 const log = new Log()
 const bank = new Bank(log)
 
-// console.log('log', log)
-// console.log('bank', bank)
-
 const server = net.createServer(socket => {
     socket = jsonStream(socket)
 
+    const reject = msg => { socket.write({ err: msg }) }
+
     socket.on('data', function (msg) {
         console.log('Bank received:', msg)
-        // socket.write can be used to send a reply
-
-        const nope = () => {socket.write({ err: 'nope' })}
 
         switch (msg.cmd) {
             case 'deposit':
-                (bank.canDeposit(msg.amount)) ? bank.deposit(msg) : nope()
+                (bank.canDeposit(msg.amount)) ? bank.deposit(msg) : reject("Deposit request is invalid.")
                 break
             case 'withdraw':
-                (bank.canWithdraw(msg.amount)) ? bank.withdraw(msg) : nope()
+                (bank.canWithdraw(msg.amount)) ? bank.withdraw(msg) : reject("Withdrawal request is invalid.")
                 break
             case 'balance':
                 break
