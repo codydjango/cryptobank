@@ -1,5 +1,5 @@
 const sodium = require('sodium-native')
-const prompt = require('./prompt')
+const prompt = require('../utilities/prompt')
 
 ;(async () => {
     const publicKey = await prompt('Public Key: ')

@@ -1,175 +1,10 @@
-// bank.js
 const jsonStream = require('duplex-json-stream')
 const net = require('net')
-const fs = require('fs')
-const path = require('path')
-const sodium = require('sodium-native')
-
-const RESET = true
-const tamperErr = new Error('tampered')
-const keyStore = new KeyStore()
-
-class Log {
-    static get logPath() {
-        return path.join(path.dirname(__dirname), '/log.json')
-    }
-
-    static loadLog(reset=false) {
-        if (reset) return []
-        try {
-            return JSON.parse(fs.readFileSync(Log.logPath))
-        } catch (err) {
-            return []
-        }
-    }
-
-    static saveLog(data) {
-        fs.writeFileSync(Log.logPath, JSON.stringify(data, null, 2))
-    }
-
-    static hashToHex(stringData) {
-        const inputBuf = Buffer.from(stringData)
-        const outputBuf = Buffer.alloc(sodium.crypto_generichash_BYTES)
-
-        sodium.crypto_generichash(outputBuf, inputBuf)
-
-        return outputBuf.toString('hex')
-    }
-
-    static get genesisHash() {
-        return Buffer.alloc(32).toString('hex')
-    }
-
-    static getBestHash(log) {
-        return log.length ? log[log.length - 1].hash : Log.genesisHash
-    }
-
-    static validateEntry(prevHash, entry) {
-        if (Log.hashToHex(prevHash + JSON.stringify(entry.value)) === entry.hash) {
-            return entry.hash
-        } else {
-            throw tamperErr
-        }
-    }
-
-    static validateLog(log) {
-        log.reduce(Log.validateEntry, Log.genesisHash)
-
-        return log
-    }
-
-    constructor() {
-        try {
-            this._log = Log.validateLog(Log.loadLog(RESET))
-        } catch (err) {
-            if (err === tamperErr) {
-                console.log('Tampered log, exiting.')
-                process.exit()
-            } else {
-                throw err
-            }
-        }
-
-    }
-
-    logMsg(msg) {
-        this.add(msg)
-        this.save()
-    }
-
-    add(msg) {
-        this._log.push({
-            value: msg,
-            hash: Log.hashToHex(Log.getBestHash(this._log) + JSON.stringify(msg))
-        })
-    }
-
-    save() {
-        Log.saveLog(this.dump())
-    }
-
-    dump() {
-        return this._log
-    }
-}
-
-class KeyStore {
-    static get keypairPath() {
-        return path.join(path.dirname(__dirname), '/keypair.json')
-    }
-
-    static hasKeys() {
-        return fs.existsSync(KeyStore.keypairPath)
-    }
-
-    static generateKeys() {
-        const publicKeyBuf = Buffer.alloc(sodium.crypto_sign_PUBLICKEYBYTES)
-        const secretKeyBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES)
-
-        sodium.crypto_sign_keypair(publicKeyBuf, secretKeyBuf)
-
-        const keys = {
-            private: secretKeyBuf.toString('hex'),
-            public: publicKeyBuf.toString('hex')
-        }
-
-        fs.writeFileSync(Secure.keypairPath, JSON.stringify(keys))
-
-        return keys
-    }
-
-    static loadKeys() {
-        try {
-            return JSON.parse(fs.readFileSync(Secure.keypairPath))
-        } catch (err) {
-            return []
-        }
-    }
-
-    constructor() {
-        const { publicKey, privateKey } = (Secure.hasKeys()) ? Secure.loadKeys() : Secure.generateKeys()
-
-        this._public = publicKey
-        this._private = privateKey
-    }
-
-    get public() {
-        return this._public
-    }
-
-    get secret() {
-        return this._private
-    }
-
-    get publicBuf() {
-        return Buffer.from(this._public, 'hex')
-    }
-
-    get secretBuf() {
-        return Buffer.from(this._private, 'hex')
-    }
-
-    sign(message) {
-        const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
-        const messageBuf = Buffer.from(message)
-
-        sodium.crypto_sign_detached(signatureBuf, messageBuf, this.secretBuf)
-
-        return signatureBuf.toString('hex')
-    }
-
-    verify(message, signature) {
-        const messageBuf = Buffer.from(message)
-        const signatureBuf = Buffer.from(signature, 'hex')
-        const verified = sodium.crypto_sign_verify_detached(signatureBuf, messageBuf, this.publicBuf)
-
-        return verified
-    }
-}
+const Log = require('./Log')
 
 class Bank {
     static calculateBalanceFromLog(log) {
-        return log.map(entry => entry.value).reduce((acc, current) => {
+        return log.toArray().map(entry => entry.value).reduce((acc, current) => {
                 switch (current.cmd) {
                     case 'deposit':
                         acc += current.amount
@@ -183,18 +18,14 @@ class Bank {
             }, 0)
     }
 
-    constructor(log) {
+    constructor({ log }) {
         this._log = log
-        this._balance = this.recalculateBalance(this._log)
-    }
-
-    recalculateBalance(log) {
-        return Bank.calculateBalanceFromLog(log.dump())
+        this._balance = Bank.calculateBalanceFromLog(this._log)
     }
 
     getBalance(recalculate=false) {
         if (recalculate) {
-            this._balance = this.recalculateBalance(this._log)
+            this._balance = Bank.calculateBalanceFromLog(this._log)
         }
 
         return this._balance
@@ -223,10 +54,11 @@ class Bank {
     }
 }
 
-const log = new Log()
-const bank = new Bank(log)
 
 const server = net.createServer(socket => {
+    const log = new Log({ reset: true })
+    const bank = new Bank({ log })
+
     socket = jsonStream(socket)
 
     const reject = msg => { socket.write({ err: msg }) }
