@@ -7,6 +7,7 @@ const sodium = require('sodium-native')
 
 const RESET = true
 const tamperErr = new Error('tampered')
+const keyStore = new KeyStore()
 
 class Log {
     static get logPath() {
@@ -92,13 +93,13 @@ class Log {
     }
 }
 
-class Secure {
+class KeyStore {
     static get keypairPath() {
         return path.join(path.dirname(__dirname), '/keypair.json')
     }
 
     static hasKeys() {
-        return fs.existsSync(Secure.keypairPath)
+        return fs.existsSync(KeyStore.keypairPath)
     }
 
     static generateKeys() {
@@ -133,11 +134,36 @@ class Secure {
     }
 
     get public() {
+        return this._public
+    }
+
+    get secret() {
+        return this._private
+    }
+
+    get publicBuf() {
         return Buffer.from(this._public, 'hex')
     }
 
-    get private() {
+    get secretBuf() {
         return Buffer.from(this._private, 'hex')
+    }
+
+    sign(message) {
+        const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
+        const messageBuf = Buffer.from(message)
+
+        sodium.crypto_sign_detached(signatureBuf, messageBuf, this.secretBuf)
+
+        return signatureBuf.toString('hex')
+    }
+
+    verify(message, signature) {
+        const messageBuf = Buffer.from(message)
+        const signatureBuf = Buffer.from(signature, 'hex')
+        const verified = sodium.crypto_sign_verify_detached(signatureBuf, messageBuf, this.publicBuf)
+
+        return verified
     }
 }
 
@@ -197,7 +223,6 @@ class Bank {
     }
 }
 
-const keys = new Secure()
 const log = new Log()
 const bank = new Bank(log)
 
