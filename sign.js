@@ -9,12 +9,12 @@ const prompt = require('./prompt')
 
     sodium.crypto_sign_keypair(publicKeyBuf, secretKeyBuf)
 
-    const message = (await prompt('Message: ')).trim()
+    const message = await prompt('Message: ')
     const messageBuf = Buffer.from(message)
 
     sodium.crypto_sign_detached(signatureBuf, messageBuf, secretKeyBuf)
 
-    console.log(`Signed message: ${ message }`, message.length)
-    console.log(`Public Key: ${ publicKeyBuf.toString('hex') }`, publicKeyBuf.toString('hex').length)
-    console.log(`Signature: ${ signatureBuf.toString('hex') }`, signatureBuf.toString('hex').length)
+    console.log(`Signed message: ${ message }`)
+    console.log(`Public Key: ${ publicKeyBuf.toString('hex') }`)
+    console.log(`Signature: ${ signatureBuf.toString('hex') }`)
 })()

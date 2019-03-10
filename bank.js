@@ -104,7 +104,6 @@ class Secure {
     static generateKeys() {
         const publicKeyBuf = Buffer.alloc(sodium.crypto_sign_PUBLICKEYBYTES)
         const secretKeyBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES)
-        const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
 
         sodium.crypto_sign_keypair(publicKeyBuf, secretKeyBuf)
 
@@ -127,14 +126,18 @@ class Secure {
     }
 
     constructor() {
-        const publicKeyBuf = Buffer.alloc(sodium.crypto_sign_PUBLICKEYBYTES)
-        const secretKeyBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES)
-        const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
-
         const { publicKey, privateKey } = (Secure.hasKeys()) ? Secure.loadKeys() : Secure.generateKeys()
 
-        this.publicKey = publicKey
-        this.privateKey = privateKey
+        this._public = publicKey
+        this._private = privateKey
+    }
+
+    get public() {
+        return Buffer.from(this._public, 'hex')
+    }
+
+    get private() {
+        return Buffer.from(this._private, 'hex')
     }
 }
 
@@ -155,7 +158,6 @@ class Bank {
     }
 
     constructor(log) {
-        this._secure = new Secure()
         this._log = log
         this._balance = this.recalculateBalance(this._log)
     }
@@ -195,6 +197,7 @@ class Bank {
     }
 }
 
+const keys = new Secure()
 const log = new Log()
 const bank = new Bank(log)
 
