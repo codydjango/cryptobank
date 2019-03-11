@@ -1,6 +1,12 @@
 const fs = require('fs')
 const path = require('path')
-const keyStore = require('./keyStore')
+
+const keypairStore = require('./keypairStore')
+const generateHash = require('./tools/generateHash')
+const sign = require('./tools/sign')
+const verify = require('./tools/verify')
+
+
 const tamperErr = new Error('tampered')
 
 class Log {
@@ -21,10 +27,6 @@ class Log {
         fs.writeFileSync(Log.logPath, JSON.stringify(data, null, 2))
     }
 
-    static hashToHex(stringData) {
-        return keyStore.hash(stringData)
-    }
-
     static get genesisHash() {
         return Buffer.alloc(32).toString('hex')
     }
@@ -34,8 +36,8 @@ class Log {
     }
 
     static validateEntry(prevHash, entry) {
-        const hasCorrectHash = (Log.hashToHex(prevHash + JSON.stringify(entry.value)) === entry.hash)
-        const hasValidSignature = keyStore.verify(entry.hash, entry.signature)
+        const hasCorrectHash = (generateHash(prevHash + JSON.stringify(entry.value)) === entry.hash)
+        const hasValidSignature = verify(entry.signature, entry.hash, keypairStore.public)
 
         if (hasCorrectHash() && hasValidSignature()) {
             return entry.hash
@@ -70,8 +72,8 @@ class Log {
     }
 
     add(msg) {
-        const hash = Log.hashToHex(Log.getBestHash(this._log) + JSON.stringify(msg))
-        const signature = keyStore.sign(hash)
+        const hash = generateHash(Log.getBestHash(this._log) + JSON.stringify(msg))
+        const signature = sign(hash, keypairStore.secret)
 
         this._log.push({
             value: msg,
