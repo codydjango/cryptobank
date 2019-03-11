@@ -2,6 +2,7 @@ const sodium = require('sodium-native')
 const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
+// Create a new random keypair.
 function createKeypair() {
     const publicKeyBuf = Buffer.alloc(sodium.crypto_sign_PUBLICKEYBYTES)
     const secretKeyBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES)
@@ -14,6 +15,7 @@ function createKeypair() {
     }
 }
 
+// Sign a message using a secret key.
 function sign(message, secret) {
     const secretBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES, Buffer.from(secret, 'hex'))
     const messageBuf = Buffer.from(message)
@@ -24,16 +26,13 @@ function sign(message, secret) {
     return signatureBuf.toString('hex')
 }
 
-async function cli() {
+if (runAsCli && (async () => {
     const { public, secret } = createKeypair()
     const message = await prompt('Message: ')
     const signature = sign(message, secret)
 
-    console.log(`Signed message: ${ message }`)
-    console.log(`Public Key: ${ public }`)
+    console.log(`PublicKey: ${ public }`)
     console.log(`Signature: ${ signature }`)
-}
-
-if (runAsCli) cli()
+})())
 
 module.exports = sign

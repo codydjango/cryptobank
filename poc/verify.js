@@ -10,15 +10,13 @@ function verify(signature, message, public) {
     return sodium.crypto_sign_verify_detached(signatureBuf, messageBuf, publicBuf)
 }
 
-async function cli() {
+if (runAsCli && (async () => {
     const signature = await prompt('Signature: ')
     const message = await prompt('Message: ')
-    const public = await prompt('Public Key: ')
+    const public = await prompt('PublicKey: ')
     const verified = verify(signature, message, public)
 
-    console.log(`verified ${ verified }`)
-}
-
-if (runAsCli) cli()
+    console.log(`Verified: ${ verified }`)
+})())
 
 module.exports = verify

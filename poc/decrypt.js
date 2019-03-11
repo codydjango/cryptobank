@@ -2,6 +2,7 @@ const sodium = require('sodium-native')
 const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
+// Decrypt a cipher using a known secret key and nonce.
 function decrypt(cipher, secret, nonce) {
     const cipherBuf = Buffer.from(cipher, 'hex')
     const nonceBuf = Buffer.from(nonce, 'hex')
@@ -15,16 +16,14 @@ function decrypt(cipher, secret, nonce) {
     return messageBuf.toString()
 }
 
-async function cli() {
-    const cipher = await prompt('cipher: ')
-    const secret = await prompt('secret: ')
-    const nonce = await prompt('nonce: ')
+if (runAsCli && (async () => {
+    const cipher = await prompt('Cipher: ')
+    const secret = await prompt('SecretKey: ')
+    const nonce = await prompt('Nonce: ')
 
-    const message = decrypt(cipher, secret, nonce)
+    const plaintext = decrypt(cipher, secret, nonce)
 
-    console.log(message)
-}
-
-if (runAsCli) cli()
+    console.log(`Message: ${ plaintext }`)
+})())
 
 module.exports = decrypt
