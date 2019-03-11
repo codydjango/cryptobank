@@ -5,7 +5,7 @@ const generateSecret = require('./tools/generateSecret')
 
 class SecretStore {
     static get path() {
-        return path.join(path.dirname(__dirname), '/secret')
+        return path.join(path.dirname(__dirname), '/.secret')
     }
 
     static isEmpty() {
@@ -21,7 +21,7 @@ class SecretStore {
     }
 
     static load() {
-        return fs.readFileSync(SecretStore.path)
+        return fs.readFileSync(SecretStore.path, 'utf8')
     }
 
     constructor() {

@@ -5,7 +5,7 @@ const generateKeypair = require('./tools/generateKeypair')
 
 class KeypairStore {
     static get path() {
-        return path.join(path.dirname(__dirname), '/keypair.json')
+        return path.join(path.dirname(__dirname), '/.keypair')
     }
 
     static isEmpty() {
@@ -26,7 +26,7 @@ class KeypairStore {
     }
 
     static load() {
-        return JSON.parse(fs.readFileSync(KeypairStore.path))
+        return JSON.parse(fs.readFileSync(KeypairStore.path, 'utf8'))
     }
 
     constructor() {
