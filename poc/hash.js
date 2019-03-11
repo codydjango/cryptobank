@@ -3,7 +3,7 @@ const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
 /**
- * Function to hash a message
+ * Generate a hash for a string.
  *
  * Libsodium default hash is BLAKE2b
  *

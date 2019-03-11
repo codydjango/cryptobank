@@ -2,7 +2,7 @@ const sodium = require('sodium-native')
 const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
-// Encrypt a message using symmetric encryption
+// Encrypt a message using symmetric encryption.
 function encrypt(secretKey, plaintext) {
     const nonce = Buffer.alloc(sodium.crypto_secretbox_NONCEBYTES)
     const cipher = Buffer.alloc(plaintext.length + sodium.crypto_secretbox_MACBYTES)

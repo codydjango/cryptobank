@@ -1,6 +1,6 @@
 const readline = require('readline')
 
-// simple promised prompt for taking in user input
+// Simple promised prompt for taking in user input.
 function prompt(message) {
     const rl = readline.createInterface({
         input: process.stdin,

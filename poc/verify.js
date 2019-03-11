@@ -2,6 +2,7 @@ const sodium = require('sodium-native')
 const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
+// Verify a signature is valid given a known message and public key.
 function verify(signature, message, public) {
     const messageBuf = Buffer.from(message)
     const signatureBuf = Buffer.from(signature, 'hex')
