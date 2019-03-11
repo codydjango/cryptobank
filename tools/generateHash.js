@@ -12,7 +12,7 @@ const runAsCli = (require.main.filename === module.filename)
  * sodium.crypto_generichash_BYTES for default
  * sodium.crypto_generichash_KEYBYTES_MIN
 */
-function hash(message) {
+function generateHash(message) {
     const inputBuf = Buffer.from(message)
     const outputBuf = Buffer.alloc(sodium.crypto_generichash_BYTES)
 
@@ -21,9 +21,9 @@ function hash(message) {
     return outputBuf.toString('hex')
 }
 
-if (runAsCli && (async () => {
+(runAsCli && (async () => {
     const message = await prompt('Message: ')
-    console.log(hash(message))
+    console.log(generateHash(message))
 })())
 
-module.exports = hash
+module.exports = generateHash

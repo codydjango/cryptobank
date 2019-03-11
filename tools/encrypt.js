@@ -16,7 +16,7 @@ function encrypt(secretKey, plaintext) {
     }
 }
 
-if (runAsCli && (async () => {
+(runAsCli && (async () => {
     const secret = await prompt('SecretKey: ')
     const plaintext = await prompt('Message: ')
 

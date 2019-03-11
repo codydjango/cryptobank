@@ -2,7 +2,7 @@ const sodium = require('sodium-native')
 const runAsCli = (require.main.filename === module.filename)
 
 // Generate a secret key for symetric encryption.
-function randomSecret() {
+function generateSecret() {
     const secret = Buffer.alloc(sodium.crypto_secretbox_KEYBYTES)
 
     sodium.randombytes_buf(secret)
@@ -10,8 +10,8 @@ function randomSecret() {
     return secret.toString('hex')
 }
 
-if (runAsCli) {
-    console.log(randomSecret())
-}
+(runAsCli && (() => {
+    console.log(generateSecret())
+})())
 
-module.exports = randomSecret
+module.exports = generateSecret
