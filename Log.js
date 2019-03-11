@@ -2,29 +2,35 @@ const fs = require('fs')
 const path = require('path')
 
 const keypairStore = require('./keypairStore')
+const secretStore = require('./secretStore')
 const generateHash = require('./tools/generateHash')
 const sign = require('./tools/sign')
 const verify = require('./tools/verify')
+const decrypt = require('./tools/decrypt')
+const encrypt = require('./tools/encrypt')
 
-
+const noLogErr = new Error('no log')
 const tamperErr = new Error('tampered')
 
 class Log {
-    static get logPath() {
-        return path.join(path.dirname(__dirname), '/log.json')
+    static get path() {
+        return path.join(path.dirname(__dirname), '/.data')
     }
 
-    static loadLog(reset=false) {
+    static load(reset=false) {
         if (reset) return []
-        try {
-            return JSON.parse(fs.readFileSync(Log.logPath))
-        } catch (err) {
-            return []
-        }
+
+        if (!fs.existsSync(Log.path)) throw noLogErr
+
+        const [cipher, nonce] = fs.readFileSync(Log.path, 'utf8').split(':')
+        return JSON.parse(decrypt(secretStore.secret, cipher, nonce))
     }
 
-    static saveLog(data) {
-        fs.writeFileSync(Log.logPath, JSON.stringify(data, null, 2))
+    static save(data) {
+        const json = JSON.stringify(data)
+        const { cipher, nonce } = encrypt(secretStore.secret, json)
+
+        fs.writeFileSync(Log.path, `${ cipher }:${ nonce }`)
     }
 
     static get genesisHash() {
@@ -35,40 +41,42 @@ class Log {
         return log.length ? log[log.length - 1].hash : Log.genesisHash
     }
 
-    static validateEntry(prevHash, entry) {
-        const hasCorrectHash = (generateHash(prevHash + JSON.stringify(entry.value)) === entry.hash)
-        const hasValidSignature = verify(entry.signature, entry.hash, keypairStore.public)
+    static validate(log) {
+        const validateEntry = (prevHash, entry) => {
+            const hasCorrectHash = (generateHash(prevHash + JSON.stringify(entry.value)) === entry.hash)
+            const hasValidSignature = verify(entry.signature, entry.hash, keypairStore.public)
 
-        if (hasCorrectHash() && hasValidSignature()) {
-            return entry.hash
-        } else {
-            throw tamperErr
+            if (hasCorrectHash && hasValidSignature) {
+                return entry.hash
+            } else {
+                throw tamperErr
+            }
         }
-    }
 
-    static validateLog(log) {
-        log.reduce(Log.validateEntry, Log.genesisHash)
+        log.reduce(validateEntry, Log.genesisHash)
 
         return log
     }
 
     constructor({ reset }) {
         try {
-            this._log = Log.validateLog(Log.loadLog(reset))
+            this._log = Log.validate(Log.load(reset))
         } catch (err) {
             if (err === tamperErr) {
                 console.log('Tampered log, exiting.')
                 process.exit()
+            } else if (err === noLogErr) {
+                // there is no log file, it will be created on the first save.
+                this._log = []
             } else {
                 throw err
             }
         }
-
     }
 
     logMsg(msg) {
         this.add(msg)
-        this.save()
+        Log.save(this.toArray())
     }
 
     add(msg) {
@@ -80,10 +88,6 @@ class Log {
             hash,
             signature
         })
-    }
-
-    save() {
-        Log.saveLog(this.toArray())
     }
 
     toArray() {
