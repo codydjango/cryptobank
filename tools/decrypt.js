@@ -3,7 +3,7 @@ const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
 // Decrypt a cipher using a known secret key and nonce.
-function decrypt(cipher, secret, nonce) {
+function decrypt(secret, cipher, nonce) {
     const cipherBuf = Buffer.from(cipher, 'hex')
     const nonceBuf = Buffer.from(nonce, 'hex')
     const secretBuf = Buffer.from(secret, 'hex')
@@ -21,7 +21,7 @@ function decrypt(cipher, secret, nonce) {
     const secret = await prompt('SecretKey: ')
     const nonce = await prompt('Nonce: ')
 
-    const plaintext = decrypt(cipher, secret, nonce)
+    const plaintext = decrypt(secret, cipher, nonce)
 
     console.log(`Message: ${ plaintext }`)
 })())

@@ -3,27 +3,26 @@ const prompt = require('./prompt')
 const runAsCli = (require.main.filename === module.filename)
 
 // Encrypt a message using symmetric encryption.
-function encrypt(secretKey, plaintext) {
-    const nonce = Buffer.alloc(sodium.crypto_secretbox_NONCEBYTES)
-    const cipher = Buffer.alloc(plaintext.length + sodium.crypto_secretbox_MACBYTES)
+function encrypt(secret, plaintext) {
+    const cipherBuf = Buffer.alloc(plaintext.length + sodium.crypto_secretbox_MACBYTES)
+    const plaintextBuf = Buffer.from(plaintext)
+    const nonceBuf = Buffer.alloc(sodium.crypto_secretbox_NONCEBYTES)
+    const secretBuf = Buffer.alloc(sodium.crypto_secretbox_KEYBYTES, Buffer.from(secret, 'hex'))
 
-    sodium.randombytes_buf(nonce)
-    sodium.crypto_secretbox_easy(cipher, plaintext, nonce, secretKey)
+    sodium.randombytes_buf(nonceBuf)
+    sodium.crypto_secretbox_easy(cipherBuf, plaintextBuf, nonceBuf, secretBuf)
 
     return {
-        cipher: cipher.toString('hex'),
-        nonce: nonce.toString('hex')
+        cipher: cipherBuf.toString('hex'),
+        nonce: nonceBuf.toString('hex')
     }
 }
 
 (runAsCli && (async () => {
     const secret = await prompt('SecretKey: ')
-    const plaintext = await prompt('Message: ')
+    const message = await prompt('Message: ')
 
-    const secretBuf = Buffer.alloc(sodium.crypto_secretbox_KEYBYTES, Buffer.from(secret, 'hex'))
-    const plaintextBuf = Buffer.from(plaintext)
-
-    const { cipher, nonce } = encrypt(secretBuf, plaintextBuf)
+    const { cipher, nonce } = encrypt(secret, message)
 
     console.log(`Cipher: ${ cipher }`)
     console.log(`Nonce: ${ nonce }`)
