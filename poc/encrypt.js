@@ -12,7 +12,7 @@ function encrypt(secretKey, message) {
     return { cipher: cipher.toString('hex'), nonce: nonce.toString('hex') }
 }
 
-async function test() {
+async function cli() {
     const secret = await prompt('secret: ')
     const message = await prompt('message: ')
 
@@ -25,6 +25,6 @@ async function test() {
     console.log(`nonce: ${ nonce }`)
 }
 
-if (runAsCli) test()
+if (runAsCli) cli()
 
 module.exports = encrypt

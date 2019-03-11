@@ -15,7 +15,7 @@ function decrypt(cipher, secret, nonce) {
     return messageBuf.toString()
 }
 
-async function test() {
+async function cli() {
     const cipher = await prompt('cipher: ')
     const secret = await prompt('secret: ')
     const nonce = await prompt('nonce: ')
@@ -25,6 +25,6 @@ async function test() {
     console.log(message)
 }
 
-if (runAsCli) test()
+if (runAsCli) cli()
 
 module.exports = decrypt

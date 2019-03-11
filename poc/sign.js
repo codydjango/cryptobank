@@ -24,7 +24,7 @@ function sign(message, secret) {
     return signatureBuf.toString('hex')
 }
 
-async function test() {
+async function cli() {
     const { public, secret } = createKeypair()
     const message = await prompt('Message: ')
     const signature = sign(message, secret)
@@ -34,6 +34,6 @@ async function test() {
     console.log(`Signature: ${ signature }`)
 }
 
-if (runAsCli) test()
+if (runAsCli) cli()
 
 module.exports = sign
