@@ -1,5 +1,6 @@
 const jsonStream = require('duplex-json-stream')
 const net = require('net')
+
 const Log = require('./Log')
 
 class Bank {
@@ -54,11 +55,9 @@ class Bank {
     }
 }
 
-
+const log = new Log({ reset: false })
+const bank = new Bank({ log })
 const server = net.createServer(socket => {
-    const log = new Log({ reset: true })
-    const bank = new Bank({ log })
-
     socket = jsonStream(socket)
 
     const reject = msg => { socket.write({ err: msg }) }
