@@ -1,6 +1,6 @@
 const sodium = require('sodium-native')
 const prompt = require('./prompt')
-const runAsCli = (require.main.filename === module.filename)
+const Cli = (require.main.filename === module.filename)
 
 /**
  * Generate a hash for a string.
@@ -21,7 +21,7 @@ function generateHash(message) {
     return outputBuf.toString('hex')
 }
 
-(runAsCli && (async () => {
+(Cli && (async () => {
     const message = await prompt('Message: ')
     console.log(generateHash(message))
 })())

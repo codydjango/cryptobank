@@ -1,6 +1,6 @@
 const sodium = require('sodium-native')
 const prompt = require('./prompt')
-const runAsCli = (require.main.filename === module.filename)
+const Cli = (require.main.filename === module.filename)
 
 // Create a new random keypair.
 function createKeypair() {
@@ -26,7 +26,7 @@ function sign(message, secret) {
     return signatureBuf.toString('hex')
 }
 
-(runAsCli && (async () => {
+(Cli && (async () => {
     const { public, secret } = createKeypair()
     const message = await prompt('Message: ')
     const signature = sign(message, secret)

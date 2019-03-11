@@ -1,5 +1,5 @@
 const sodium = require('sodium-native')
-const runAsCli = (require.main.filename === module.filename)
+const Cli = (require.main.filename === module.filename)
 
 // Generate a keypair for asymmetric encryption.
 function generateKeypair() {
@@ -14,7 +14,7 @@ function generateKeypair() {
     }
 }
 
-(runAsCli && (() => {
+(Cli && (() => {
     const { secret, public } = generateKeypair()
 
     console.log(`SecretKey: ${ secret }`)

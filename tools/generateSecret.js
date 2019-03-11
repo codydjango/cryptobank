@@ -1,5 +1,5 @@
 const sodium = require('sodium-native')
-const runAsCli = (require.main.filename === module.filename)
+const Cli = (require.main.filename === module.filename)
 
 // Generate a secret key for symetric encryption.
 function generateSecret() {
@@ -10,7 +10,7 @@ function generateSecret() {
     return secret.toString('hex')
 }
 
-(runAsCli && (() => {
+(Cli && (() => {
     console.log(generateSecret())
 })())
 

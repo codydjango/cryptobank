@@ -1,6 +1,6 @@
 const sodium = require('sodium-native')
 const prompt = require('./prompt')
-const runAsCli = (require.main.filename === module.filename)
+const Cli = (require.main.filename === module.filename)
 
 // Verify a signature is valid given a known message and public key.
 function verify(signature, message, public) {
@@ -11,7 +11,7 @@ function verify(signature, message, public) {
     return sodium.crypto_sign_verify_detached(signatureBuf, messageBuf, publicBuf)
 }
 
-(runAsCli && (async () => {
+(Cli && (async () => {
     const signature = await prompt('Signature: ')
     const message = await prompt('Message: ')
     const public = await prompt('PublicKey: ')

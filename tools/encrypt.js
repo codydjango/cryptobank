@@ -1,6 +1,6 @@
 const sodium = require('sodium-native')
 const prompt = require('./prompt')
-const runAsCli = (require.main.filename === module.filename)
+const Cli = (require.main.filename === module.filename)
 
 // Encrypt a message using symmetric encryption.
 function encrypt(secret, message) {
@@ -18,11 +18,9 @@ function encrypt(secret, message) {
     }
 }
 
-(runAsCli && (async () => {
+(Cli && (async () => {
     const secret = await prompt('SecretKey: ')
     const message = await prompt('Message: ')
-
-    console.log(secret, message)
 
     const { cipher, nonce } = encrypt(secret, message)
 
