@@ -25,7 +25,7 @@ class SecretStore {
     }
 
     constructor() {
-        this._secret = SecretStore.empty() ? SecretStore.generate() : SecretStore.load()
+        this._secret = SecretStore.isEmpty() ? SecretStore.generate() : SecretStore.load()
     }
 
     get secret() {
