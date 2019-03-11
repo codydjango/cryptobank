@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
 
-const generateKeypair = require('./tools/generateKeypair')
+const generateKeypair = require('../tools/generateKeypair')
 
 class KeypairStore {
     static get path() {
-        return path.join(path.dirname(__dirname), '/.keypair')
+        return path.join(path.dirname(require.main.filename), '/.keypair')
     }
 
     static isEmpty() {

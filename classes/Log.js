@@ -1,20 +1,20 @@
 const fs = require('fs')
 const path = require('path')
 
-const keypairStore = require('./keypairStore')
-const secretStore = require('./secretStore')
-const generateHash = require('./tools/generateHash')
-const sign = require('./tools/sign')
-const verify = require('./tools/verify')
-const decrypt = require('./tools/decrypt')
-const encrypt = require('./tools/encrypt')
+const keypairStore = require('../singletons/keypairStore')
+const secretStore = require('../singletons/secretStore')
+const generateHash = require('../tools/generateHash')
+const sign = require('../tools/sign')
+const verify = require('../tools/verify')
+const decrypt = require('../tools/decrypt')
+const encrypt = require('../tools/encrypt')
 
 const noLogErr = new Error('no log')
 const tamperErr = new Error('tampered')
 
 class Log {
     static get path() {
-        return path.join(path.dirname(__dirname), '/.data')
+        return path.join(path.dirname(require.main.filename), '/.data')
     }
 
     static load(reset=false) {
@@ -58,6 +58,13 @@ class Log {
         return log
     }
 
+    static logify(fn, log) {
+        return function(...args) {
+            log.record(args)
+            return fn(...args)
+        }
+    }
+
     constructor({ reset }) {
         try {
             this._log = Log.validate(Log.load(reset))
@@ -74,7 +81,7 @@ class Log {
         }
     }
 
-    logMsg(msg) {
+    record(msg) {
         this.add(msg)
         Log.save(this.toArray())
     }

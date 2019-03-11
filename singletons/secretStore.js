@@ -1,11 +1,11 @@
 const fs = require('fs')
 const path = require('path')
 
-const generateSecret = require('./tools/generateSecret')
+const generateSecret = require('../tools/generateSecret')
 
 class SecretStore {
     static get path() {
-        return path.join(path.dirname(__dirname), '/.secret')
+        return path.join(path.dirname(require.main.filename), '/.secret')
     }
 
     static isEmpty() {
