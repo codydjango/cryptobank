@@ -1,23 +1,20 @@
 {
   "name": "bank",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "https://github.com/sodium-friends/learntocrypto",
+  "main": "bank.js",
   "scripts": {
-    "start": "./node_modules/.bin/concurrently 'nodemon bank.js' 'nodemon teller.js'",
-    "bank": "nodemon bank.js",
-    "teller": "nodemon teller.js",
-    "hash": "nodemon hash-example.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./node_modules/.bin/concurrently 'node bank.js' 'node teller.js'",
+    "bank": "node bank.js",
+    "teller": "node teller.js",
     "reset": "rm -f .secret .keypair .data"
   },
-  "author": "",
+  "author": "Cody Redmond",
   "license": "ISC",
   "dependencies": {
     "concurrently": "^4.1.0",
     "json-socket": "^0.3.0",
     "libsodium": "^0.7.4",
-    "nodemon": "^1.18.10",
     "sodium-native": "^2.3.0"
   }
 }
