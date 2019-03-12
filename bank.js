@@ -7,16 +7,17 @@ const Bank = require('./classes/Bank')
 const verify = require('./tools/verify')
 
 // constants
-const RESET = false
+const RESET = process.env.RESET || false
 const SUPPORTED_COMMANDS = ['register', 'withdraw', 'balance', 'deposit']
 
+// instantiate classes
 const log = new Log(RESET)
 const bank = new Bank(determineBalancesFromLog(log))
 
-// Register methods to record
+// Register methods to record in log
 log.logify(bank, ['register', 'withdraw', 'deposit'])
 
-// Bootstrap the server
+// Bootstrap server
 net.createServer().on('connection', handleConnection).listen(3876)
 
 // Handle the connection and upgrade the socket to JsonSocket
@@ -25,7 +26,7 @@ function handleConnection(socket) {
     socket.on('message', msg => handleMessage(socket, msg))
 }
 
-// Route the message passed through JsonSocket
+// Handle the message coming through the JsonSocket
 function handleMessage(socket, msg) {
 
     // Declare validations
@@ -48,7 +49,7 @@ function handleMessage(socket, msg) {
     if (!hasValidSignature(msg)) return reject(msg, 'Signature is not valid')
     if (!hasValidCommand(msg)) return reject(msg, 'Command not supported')
 
-    // Route messaging
+    // Routing of valid command
     switch (msg.cmd) {
         case 'register':
             if (!bank.canRegister(msg)) return reject(msg, "Register request is invalid.")
