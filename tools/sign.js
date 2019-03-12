@@ -17,6 +17,7 @@ function createKeypair() {
 
 // Sign a message using a secret key.
 function sign(message, secret) {
+    if (typeof message !== 'string') throw new Error('Sign \'message\' argument must be of type: string')
     const secretBuf = Buffer.alloc(sodium.crypto_sign_SECRETKEYBYTES, Buffer.from(secret, 'hex'))
     const messageBuf = Buffer.from(message)
     const signatureBuf = Buffer.alloc(sodium.crypto_sign_BYTES)
