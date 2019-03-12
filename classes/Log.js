@@ -65,7 +65,7 @@ class Log {
         }
     }
 
-    constructor({ reset }) {
+    constructor(reset=false) {
         try {
             this._log = Log.validate(Log.load(reset))
         } catch (err) {
@@ -79,6 +79,10 @@ class Log {
                 throw err
             }
         }
+    }
+
+    logify(obj, methods) {
+        methods.forEach(m => Log.logify(obj[m], this))
     }
 
     record(msg) {

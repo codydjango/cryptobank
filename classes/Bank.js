@@ -1,30 +1,14 @@
 class Bank {
-    static calculateBalancesFromLog(log) {
-        return log.toArray().map(entry => entry.value).reduce((acc, current) => {
-            switch (current.cmd) {
-                case 'register':
-                    acc[current.customerId] = 0
-                case 'deposit':
-                    acc[current.customerId] += current.amount
-                    break
-                case 'withdraw':
-                    acc[current.customerId] -= current.amount
-                    break
-            }
+    constructor(balances) {
+        this._balances = balances
 
-            return acc
-        }, {})
-    }
-
-    constructor({ log }) {
-        this._balances = Bank.calculateBalancesFromLog(log)
-
-        this.register = log.constructor.logify(this.register.bind(this), log)
-        this.deposit = log.constructor.logify(this.deposit.bind(this), log)
-        this.withdraw = log.constructor.logify(this.withdraw.bind(this), log)
+        this.register = this.register.bind(this)
+        this.deposit = this.deposit.bind(this)
+        this.withdraw = this.withdraw.bind(this)
     }
 
     getBalance(customerId) {
+        console.log('getBalance', this._balances, customerId)
         return this._balances[customerId]
     }
 
@@ -41,11 +25,11 @@ class Bank {
     }
 
     isRegistered(customerId) {
-        return (this._balances[customerId] === undefined)
+        return (this._balances[customerId] !== undefined)
     }
 
     canRegister({ customerId }) {
-        return (!isRegistered(customerId))
+        return (!this.isRegistered(customerId))
     }
 
     canDeposit({ customerId, amount }) {
