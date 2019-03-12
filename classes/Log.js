@@ -10,7 +10,7 @@ const decrypt = require('../tools/decrypt')
 const encrypt = require('../tools/encrypt')
 
 const noLogErr = new Error('no log')
-const tamperErr = new Error('tampered')
+const tamperedErr = new Error('tampered')
 
 class Log {
     static get path() {
@@ -27,8 +27,7 @@ class Log {
     }
 
     static save(data) {
-        const json = JSON.stringify(data)
-        const { cipher, nonce } = encrypt(secretStore.secret, json)
+        const { cipher, nonce } = encrypt(secretStore.secret, JSON.stringify(data))
 
         fs.writeFileSync(Log.path, `${ cipher }:${ nonce }`)
     }
@@ -42,34 +41,34 @@ class Log {
     }
 
     static validate(log) {
-        const validateEntry = (prevHash, entry) => {
+        log.reduce((prevHash, entry) => {
             const hasCorrectHash = (generateHash(prevHash + JSON.stringify(entry.value)) === entry.hash)
             const hasValidSignature = verify(entry.signature, entry.hash, keypairStore.public)
 
-            if (hasCorrectHash && hasValidSignature) {
-                return entry.hash
-            } else {
-                throw tamperErr
-            }
-        }
+            if (!(hasCorrectHash && hasValidSignature)) throw tamperedErr
 
-        log.reduce(validateEntry, Log.genesisHash)
+            return entry.hash
+        }, Log.genesisHash)
 
         return log
     }
 
     static logify(fn, log) {
         return function(...args) {
-            log.record(args)
+            log.record(...args)
             return fn(...args)
         }
     }
 
+    // Look for a log on file, attempt to read it, attempt to decrypt it,
+    // attempt to validate the transactions, and finally, return the parsed array.
+    // If the log is not found, return an empty array. If the log fails decryption or
+    // verification, catch the "tamperedErr" and stop the process.
     constructor(reset=false) {
         try {
             this._log = Log.validate(Log.load(reset))
         } catch (err) {
-            if (err === tamperErr) {
+            if (err === tamperedErr) {
                 console.log('Tampered log, exiting.')
                 process.exit()
             } else if (err === noLogErr) {
@@ -81,8 +80,14 @@ class Log {
         }
     }
 
+    get bestHash() {
+        return Log.getBestHash(this._log)
+    }
+
     logify(obj, methods) {
-        methods.forEach(m => Log.logify(obj[m], this))
+        methods.forEach(method => {
+            obj[method] = Log.logify(obj[method], this)
+        })
     }
 
     record(msg) {
@@ -91,7 +96,7 @@ class Log {
     }
 
     add(msg) {
-        const hash = generateHash(Log.getBestHash(this._log) + JSON.stringify(msg))
+        const hash = generateHash(this.bestHash + JSON.stringify(msg))
         const signature = sign(hash, keypairStore.secret)
 
         this._log.push({
