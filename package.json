@@ -9,7 +9,7 @@
     "teller": "nodemon teller.js",
     "hash": "nodemon hash-example.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "reset": "rm .secret .keypair .data"
+    "reset": "rm -f .secret .keypair .data"
   },
   "author": "",
   "license": "ISC",
