@@ -29,10 +29,10 @@ const requestQueue = [
     [customer1, { cmd: 'balance' }]
 ]
 
-function processRequest(customer, msg) {
-    msg.customerId = customer.public
-    msg.signature = sign(JSON.stringify(msg), customer.secret)
-    socket.sendMessage(msg)
+function processRequest(customer, request) {
+    request.customerId = customer.public
+    request.signature = sign(JSON.stringify(request), customer.secret)
+    socket.sendMessage(request)
 }
 
 (function process(requestQueue) {
