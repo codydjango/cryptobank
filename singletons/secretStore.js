@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const sodium = require('sodium-native')
 
 const generateSecret = require('../tools/generateSecret')
 
@@ -25,11 +26,20 @@ class SecretStore {
     }
 
     constructor() {
-        this._secret = SecretStore.isEmpty() ? SecretStore.generate() : SecretStore.load()
+        const secretBuf = Buffer.from(SecretStore.isEmpty() ? SecretStore.generate() : SecretStore.load())
+
+        this._secretBuf = sodium.sodium_malloc(secretBuf.length)
+        this._secretBuf.fill(secretBuf)
+
+        sodium.sodium_mprotect_noaccess(this._secretBuf)
     }
 
     get secret() {
-        return this._secret
+        sodium.sodium_mprotect_readonly(this._secretBuf)
+        const hex = this._secretBuf.toString('hex')
+        sodium.sodium_mprotect_noaccess(this._secretBuf)
+
+        return hex
     }
 }
 

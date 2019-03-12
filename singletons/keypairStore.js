@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const sodium = require('sodium-native')
 
 const generateKeypair = require('../tools/generateKeypair')
 
@@ -34,19 +35,36 @@ class KeypairStore {
             'private': privateKey } = KeypairStore.isEmpty() ? KeypairStore.generate() : KeypairStore.load()
 
         if (publicKey && privateKey) {
-            this._public = publicKey
-            this._private = privateKey
+            const publicBuf = Buffer.from(publicKey)
+            const privateBuf = Buffer.from(privateKey)
+
+            this._publicBuf = sodium.sodium_malloc(publicBuf.length)
+            this._publicBuf.fill(publicBuf)
+
+            this._privateBuf = sodium.sodium_malloc(privateBuf.length)
+            this._privateBuf.fill(privateBuf)
+
+            sodium.sodium_mprotect_noaccess(this._publicBuf)
+            sodium.sodium_mprotect_noaccess(this._privateBuf)
         } else {
             throw new Error('no keys')
         }
     }
 
     get public() {
-        return this._public
+        sodium.sodium_mprotect_readonly(this._publicBuf)
+        const hex = this._publicBuf.toString('hex')
+        sodium.sodium_mprotect_noaccess(this._publicBuf)
+
+        return hex
     }
 
-    get secret() {
-        return this._private
+    get private() {
+        sodium.sodium_mprotect_readonly(this._secretBuf)
+        const hex = this._privateBuf.toString('hex')
+        sodium.sodium_mprotect_noaccess(this._secretBuf)
+
+        return hex
     }
 }
 
