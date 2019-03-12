@@ -8,7 +8,6 @@ class Bank {
     }
 
     getBalance(customerId) {
-        console.log('getBalance', this._balances, customerId)
         return this._balances[customerId]
     }
 
