@@ -7,7 +7,8 @@
     "start": "./node_modules/.bin/concurrently 'node bank.js' 'node teller.js'",
     "bank": "node bank.js",
     "teller": "node teller.js",
-    "reset": "rm -f .secret .keypair .data"
+    "reset": "rm -f .secret .keypair .data",
+    "tests": "./node_modules/.bin/mocha"
   },
   "author": "Cody Redmond",
   "license": "ISC",
@@ -15,6 +16,7 @@
     "concurrently": "^4.1.0",
     "json-socket": "^0.3.0",
     "libsodium": "^0.7.4",
+    "mocha": "^6.0.2",
     "sodium-native": "^2.3.0"
   }
 }
