@@ -97,13 +97,26 @@ class Log {
 
     add(msg) {
         const hash = generateHash(this.bestHash + JSON.stringify(msg))
-        const signature = sign(hash, keypairStore.secret)
+        const signature = sign(hash, keypairStore.private)
 
         this._log.push({
             value: msg,
             hash,
             signature
         })
+    }
+
+    isValid() {
+        let valid
+
+        try {
+            Log.validate(this.toArray())
+            valid = true
+        } catch (err) {
+            valid = false
+        }
+
+        return valid
     }
 
     toArray() {
