@@ -9,6 +9,7 @@ const verify = require('./tools/verify')
 // constants
 const RESET = process.env.RESET || false
 const SUPPORTED_COMMANDS = ['register', 'withdraw', 'balance', 'deposit']
+const PORT = 3876
 
 // instantiate classes
 const log = new Log(RESET)
@@ -18,7 +19,7 @@ const bank = new Bank(determineBalancesFromLog(log))
 log.logify(bank, ['register', 'withdraw', 'deposit'])
 
 // Bootstrap server
-net.createServer().on('connection', handleConnection).listen(3876)
+net.createServer().on('connection', handleConnection).listen(PORT)
 
 // Handle the connection and upgrade the socket to JsonSocket
 function handleConnection(socket) {
