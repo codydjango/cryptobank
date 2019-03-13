@@ -1,31 +1,25 @@
 // bank.js
-
 const JsonSocket = require('json-socket')
 const net = require('net')
 const Log = require('./classes/Log')
 const Bank = require('./classes/Bank')
 const verify = require('./tools/verify')
 
-// constants
 const RESET = process.env.RESET || false
 const SUPPORTED_COMMANDS = ['register', 'withdraw', 'balance', 'deposit']
 const PORT = 3876
 
-// instantiate classes
 const log = new Log(RESET)
 const bank = new Bank(determineBalancesFromLog(log))
 
-// Register methods to record in log
 log.logify(bank, ['register', 'withdraw', 'deposit'])
 
-// Bootstrap server
-net.createServer().on('connection', handleConnection).listen(PORT)
-
-// Handle the connection and upgrade the socket to JsonSocket
-function handleConnection(socket) {
-    socket = new JsonSocket(socket)
-    socket.on('message', msg => handleMessage(socket, msg))
-}
+net
+    .createServer()
+    .listen(PORT)
+    .on('connection', socket => {
+        socket = new JsonSocket(socket)
+        socket.on('message', msg => handleMessage(socket, msg))})
 
 // Handle the message coming through the JsonSocket
 function handleMessage(socket, msg) {
@@ -42,8 +36,7 @@ function handleMessage(socket, msg) {
             customerId,
             cmd,
             error
-        })
-    }
+        })}
 
     // Check validations
     if (!hasCustomerId(msg)) return reject(msg, 'No customerId')
@@ -60,8 +53,7 @@ function handleMessage(socket, msg) {
                 customerId: msg.customerId,
                 cmd: msg.cmd,
                 balance: bank.getBalance(msg.customerId),
-                hash: log.bestHash
-            })
+                hash: log.bestHash })
             break
         case 'deposit':
             if (!hasValidBestHash(msg)) return reject(msg, "Replay request")
@@ -72,8 +64,7 @@ function handleMessage(socket, msg) {
                 customerId: msg.customerId,
                 cmd: msg.cmd,
                 balance: bank.getBalance(msg.customerId),
-                hash: log.bestHash
-            })
+                hash: log.bestHash })
             break
         case 'withdraw':
             if (!hasValidBestHash(msg)) return reject(msg, "Replay request")
@@ -84,21 +75,18 @@ function handleMessage(socket, msg) {
                 customerId: msg.customerId,
                 cmd: msg.cmd,
                 balance: bank.getBalance(msg.customerId),
-                hash: log.bestHash
-            })
+                hash: log.bestHash })
             break
         case 'balance':
             socket.sendMessage({
                 customerId: msg.customerId,
                 cmd: msg.cmd,
                 balance: bank.getBalance(msg.customerId),
-                hash: log.bestHash
-            })
+                hash: log.bestHash })
             break
         default:
             break
-    }
-}
+    }}
 
 // Helper method to determine the bank balances from the log.
 function determineBalancesFromLog(log) {
@@ -116,5 +104,4 @@ function determineBalancesFromLog(log) {
             default:
                 return acc
         }
-    }, {})
-}
+    }, {})}
