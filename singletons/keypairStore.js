@@ -35,8 +35,8 @@ class KeypairStore {
             'private': privateKey } = KeypairStore.isEmpty() ? KeypairStore.generate() : KeypairStore.load()
 
         if (publicKey && privateKey) {
-            const publicBuf = Buffer.from(publicKey)
-            const privateBuf = Buffer.from(privateKey)
+            const publicBuf = Buffer.from(publicKey, 'hex')
+            const privateBuf = Buffer.from(privateKey, 'hex')
 
             this._publicBuf = sodium.sodium_malloc(publicBuf.length)
             this._publicBuf.fill(publicBuf)
@@ -60,9 +60,9 @@ class KeypairStore {
     }
 
     get private() {
-        sodium.sodium_mprotect_readonly(this._secretBuf)
+        sodium.sodium_mprotect_readonly(this._privateBuf)
         const hex = this._privateBuf.toString('hex')
-        sodium.sodium_mprotect_noaccess(this._secretBuf)
+        sodium.sodium_mprotect_noaccess(this._privateBuf)
 
         return hex
     }
